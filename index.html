@@ -1,0 +1,220 @@
+<!--
+Filename: index.html
+Purpose: Single-file, responsive "Happy Birthday" website you can edit easily.
+How to use:
+ 1. Save this file as `index.html` in a folder.
+ 2. Create an `images/` subfolder and place your photos there (replace filenames in the HTML or use same names).
+ 3. Open `index.html` in your browser to preview. To serve from a local server run: `python3 -m http.server` in the folder and go to http://localhost:8000
+ 4. To deploy: push to GitHub and enable Pages, or upload to Netlify/Vercel.
+
+Editing quick guide (what to change in the code):
+ - Page title (top of file): change <title> tag.
+ - Hero name/date: change the text inside <h1 id="heroName"> and the birthday date in the `targetDate` variable in the <script> near the bottom.
+ - Photos: replace `images/hero.jpg`, `images/photo1.jpg`, `images/photo2.jpg`, etc. with your photo files (same filenames) or change the src attributes.
+ - Messages: edit the <div id="messages"> section (each .message-card) or add more cards.
+ - Colors & fonts: change CSS variables in :root (accent, bg colors, font-family).
+
+Notes: all editable areas are commented with "EDIT THIS" so you can easily find them.
+-->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Happy Birthday — Special Page</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;600;800&family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --accent:#ff6b81; /* primary accent color */
+      --accent-dark:#d14a60;
+      --bg:linear-gradient(120deg,#fff7fb,#fffefc);
+      --card-bg:rgba(255,255,255,0.9);
+      --glass: rgba(255,255,255,0.75);
+      --radius:18px;
+      --maxw:1100px;
+      --font-sans: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      --font-script: 'Great Vibes', cursive;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--font-sans);background:var(--bg);min-height:100vh;color:#222}
+    .wrap{max-width:var(--maxw);margin:32px auto;padding:28px}
+
+    /* Header / hero */
+    .hero{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:center;margin-bottom:22px}
+    @media(max-width:860px){.hero{grid-template-columns:1fr;}}
+    .hero-left{padding:28px;border-radius:var(--radius);background:var(--card-bg);box-shadow:0 6px 20px rgba(12,12,12,0.06)}
+    .hero h1{margin:0;font-size:42px;letter-spacing:0.6px}
+    .hero h2{margin:4px 0 12px;font-weight:300;color:#555}
+    .hero .meta{display:flex;gap:12px;flex-wrap:wrap}
+    .pill{background:var(--glass);padding:10px 12px;border-radius:12px;font-weight:600}
+
+    /* Countdown */
+    .countdown{display:flex;gap:12px;margin-top:14px}
+    .countdown .unit{background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,255,255,0.9));padding:10px 14px;border-radius:12px;min-width:78px;text-align:center}
+    .unit .n{font-size:20px;font-weight:800}
+    .unit .l{font-size:12px;color:#666}
+
+    /* Right side - big photo */
+    .hero-right{display:flex;align-items:center;justify-content:center}
+    .photo-hero{width:100%;height:320px;border-radius:16px;overflow:hidden;border:6px solid rgba(255,255,255,0.6);box-shadow:0 10px 30px rgba(10,10,20,0.08);background:#eee}
+    .photo-hero img{width:100%;height:100%;object-fit:cover;display:block}
+
+    /* Sections */
+    .section{margin:18px 0;padding:18px;border-radius:14px;background:var(--card-bg);box-shadow:0 6px 18px rgba(10,10,20,0.04)}
+    .section h3{margin:0 0 12px}
+
+    /* Gallery - framed tiles that show full image */
+    .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:900px){.gallery{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.gallery{grid-template-columns:1fr}}
+
+    .gallery .tile{
+      width:100%;
+      height:160px;
+      border-radius:10px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#f2f2f2;
+    }
+    .gallery .tile img{
+      max-width:100%;
+      max-height:100%;
+      object-fit:contain;
+      display:block;
+    }
+
+    /* Messages */
+    .messages-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    @media(max-width:900px){.messages-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.messages-grid{grid-template-columns:1fr}}
+    .message-card{padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,255,255,0.9));min-height:120px}
+
+    /* Footer / actions */
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    .btn{padding:10px 14px;border-radius:999px;border:0;cursor:pointer;font-weight:700}
+    .btn-primary{background:var(--accent);color:white}
+    .btn-ghost{background:transparent;border:2px solid rgba(0,0,0,0.06)}
+
+    /* Surprise modal */
+    #surpriseModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;padding:28px}
+    #surpriseModal .modal-card{background:white;border-radius:16px;padding:22px;max-width:720px;width:100%;text-align:center}
+    #surpriseModal img{width:100%;max-height:60vh;height:auto;object-fit:contain;border-radius:12px;margin:10px 0}
+
+    /* tiny responsive tweaks */
+    @media(max-width:500px){.hero h1{font-size:30px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left">
+        <!-- EDIT THIS: Change your girlfriend's name -->
+        <h1 id="heroName">Happy Birthdayyy <span style="color:var(--accent);">Zainuu</span> 🎈</h1>
+        <h2>Today we celebrate ZAINAB dayyy. WOOOHOOO!!!</h2>
+
+  
+
+        <div style="margin-top:14px;display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="openSurprise()">Open Surprise</button>
+          <a class="btn btn-ghost" href="mailto:youremail@example.com?subject=Happy%20Birthday%20%F0%9F%8E%82&body=I%20want%20to%20say%20happy%20birthday!">Send Wishes</a>
+        </div>
+
+      </div>
+
+      <div class="hero-right">
+        <!-- EDIT THIS: Replace hero photo at images/hero.jpg -->
+        <div class="photo-hero"><img id="heroImg" src="images/hero.jpg" alt="Hero photo"></div>
+      </div>
+    </div>
+
+    <!-- GALLERY -->
+    <div class="section">
+      <h3>Memories</h3>
+      <p>From many of yours and ours pictures. I selected some. Remeber these are a little good ones. YOUR WELCOMEE!! hehe</p>
+      <div class="gallery" id="gallery">
+        <!-- EDIT THIS: Use your image files inside images/ folder -->
+        <div class="tile"><img src="images/photo1.jpg" alt="photo 1"></div>
+        <div class="tile"><img src="images/photo2.jpg" alt="photo 2"></div>
+        <div class="tile"><img src="images/photo3.jpg" alt="photo 3"></div>
+        <div class="tile"><img src="images/photo4.jpg" alt="photo 4"></div>
+        <div class="tile"><img src="images/photo5.jpg" alt="photo 5"></div>
+        <div class="tile"><img src="images/photo6.jpg" alt="photo 6"></div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="section">
+      <h3>WISH</h3>
+      <div class="messages-grid" id="messages">
+        <!-- EDIT THIS: Add / edit message cards -->
+        <div class="message-card"><strong>From Me:</strong>
+            <p>I know you from like when we were in grade 1 of madresa or ab 22 years ki hogai ho. bhuddi hahahaha. So you have been my best friend from the beginning, we have had our ups and downs. 
+                but ALHUMDOLLILAH for you to stick with me. I pray to ALLAH everytime to give you the best of everything in life. I would keep you as my bestie for life and more now (wink). 
+                I love to hear you daily, especially our calls, love to have your name pop my notification bar, tho I hate to wait but yes. Hate you for your roasting and not telling me things but still LOVEEEE YOUUU SO MUCHHHH!!! 
+                May your birthday be filled with love, laughter, and unforgettable moments. Remeber I am always here for you. Happy Birthday once again MY!
+
+        </p></div>
+ 
+      </div>
+    </div>
+
+    <!-- SURPRISE MODAL (hidden by default) -->
+    <div id="surpriseModal">
+      <div class="modal-card">
+        <h2 style="margin-top:0">Surprise!</h2>
+        <p>Happy Birthday, B. KEEP EATING HAHAHA</p>
+        <!-- EDIT THIS: Replace with your surprise image in images/surprise.jpg -->
+        <img id="modalImg" src="images/surprise.jpg" alt="surprise">
+        <p style="font-weight:700">I love you,<span id="fromName">Yours</span></p>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:12px">
+          <button class="btn btn-primary" onclick="closeSurprise()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <footer style="text-align:center;margin-top:20px;color:#666;font-size:13px">Made with ❤️ — edit the file to personalize this page.</footer>
+  </div>
+
+  <script>
+    /* ============ EDITABLE CONFIG ============ */
+    // Birthday set to: October 19, 2025 at 00:00:00 (Karachi, UTC+5)
+    // To make the countdown use Karachi timezone for everyone, we compute the equivalent UTC time
+    // 19 Oct 2025 00:00:00 (UTC+5) -> 18 Oct 2025 19:00:00 UTC
+    const targetDate = new Date(Date.UTC(2025, 9, 18, 19, 0, 0)); // month is 0-indexed: 9 = October
+
+    /* ============ COUNTDOWN ============ */
+    function updateCountdown(){
+      const now = new Date();
+      const diff = Math.max(0, targetDate - now);
+      const d = Math.floor(diff / (1000*60*60*24));
+      const h = Math.floor(diff / (1000*60*60) % 24);
+      const m = Math.floor(diff / (1000*60) % 60);
+      const s = Math.floor(diff / 1000 % 60);
+      document.getElementById('d').innerText = d;
+      document.getElementById('h').innerText = h;
+      document.getElementById('m').innerText = m;
+      document.getElementById('s').innerText = s;
+    }
+    updateCountdown(); setInterval(updateCountdown,1000);
+
+    function openSurprise(){
+      document.getElementById('surpriseModal').style.display = 'flex';
+    }
+    function closeSurprise(){document.getElementById('surpriseModal').style.display='none';}
+
+    // small graceful fallback: if hero image missing, use placeholder
+    document.getElementById('heroImg').addEventListener('error', ()=>{
+      document.getElementById('heroImg').src = 'https://via.placeholder.com/720x480?text=Add+images/hero.jpg';
+    });
+    // gallery fallbacks
+    Array.from(document.querySelectorAll('.gallery img')).forEach(img=>img.addEventListener('error',()=>{img.src='https://via.placeholder.com/400x300?text=Add+images/'+(img.getAttribute('alt')||'photo')}));
+    // modal fallback
+    document.getElementById('modalImg').addEventListener('error',()=>{document.getElementById('modalImg').src='https://via.placeholder.com/800x450?text=Add+images/surprise.jpg'});
+  </script>
+</body>
+</html>
